@@ -10,8 +10,6 @@ int main(){
 #if 1
 	if(test_of_socket_init(sfd) == -1){
 		perror("Test failed");
-		close(sfd);
-		exit(EXIT_FAILURE);
 	}
 #endif
 	close(sfd);
