@@ -7,8 +7,10 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include "struct.h"
 static int sfd; //Дескриптор сокета для сервера
+int cnt_req;
 
 int socket_init(void);
+struct request* read_actreq(void);
 int test_of_socket_init(int fd); //Функция для тестирования socket_init
