@@ -1,0 +1,45 @@
+REM Скрипт копирует на удаленные ПК содержимое папки Fonts и
+REM запускает fonts.bat,
+REM при ошибке копирования или запуска установки процесса на удаленном ПК
+REM записывает в лог файл одну из причин
+
+@echo off
+setlocal enabledelayedexpansion
+set "SOURCE=C:\Font"
+set "DEST=c$\Temp"
+set "LOGFILE=C:\error.log"
+
+REM Если лог файл существует, то удаляем и пишем новый
+if exist "%LOGFILE%" del "%LOGFILE%"
+
+REM Проверка на существования файла со списком ПК
+if not exist "c:\comp.txt" (
+    echo Файл c:\comp.txt не найден!
+REM Завершаем только текущий скрипт, но не сам cmd
+    exit /b 1
+)
+
+REM !errorlevel! отложенное выполнение работает с setlocal enabledelayedexpansion
+REM можно без него, но сравнится только порог значения if erorrlevel 1
+REM вместо "tokens=*" можно использовать "delims=" - в этом случае строка берется полностью
+REM Если хост не пингуется, то записывается об этом в лог файл, все остальные операции не выполняются
+
+for /f "tokens=*" %%A in (c:\comp.txt) do (
+	ping -n 1 -w 2000 %%A > nul 2>&1
+    	if !errorlevel! neq 0 (
+        	echo %%A - PING failed >> "%LOGFILE%"
+    	) else (
+		xcopy "%SOURCE%\*" "\\%%A\%DEST%" /E /I /Y
+		if !errorlevel! equ 0 (
+			echo XCOPY for %%A done!
+			wmic /node:"%%A" process call create "cmd.exe /c c:\Temp\fonts.bat"
+				if !errorlevel! equ 0 (
+					echo WMIC for %%A done!
+				) else (
+					echo %%A - WMIC failed >> "%LOGFILE%"
+				)
+		) else (
+			echo %%A - XCOPY failed >> "%LOGFILE%"
+		)
+	)
+)
